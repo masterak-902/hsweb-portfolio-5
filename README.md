@@ -7,18 +7,10 @@
 キャッシュの有効期間は、`3600[s]`にして、有効期限の管理はCronにて管理。
  
 # セットアップ
-```
-bun install
-bun run dev
-```
-
-# CloudFlareにアップロード 
-```
-bun run deploy
-```
-### wrangler.toml デフォルト設定
-
 ```sh
+git clone https://github.com/masterak-902/hsweb-portfolio-5.git
+
+cd hsweb-portfolio-5
 touch wrangler.toml
 ```
 
@@ -46,3 +38,15 @@ compatibility_date = "2024-09-05"
 # [ai]
 # binding = "AI"
 ```
+
+
+```sh
+bun install
+bun run dev
+```
+
+# CloudFlareにアップロード 
+```
+bun run deploy
+```
+
