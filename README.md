@@ -17,6 +17,11 @@ bun run dev
 bun run deploy
 ```
 ### wrangler.toml デフォルト設定
+
+```sh
+touch wrangler.toml
+```
+
 ```toml
 name = "hsweb-portfolio-5"
 compatibility_date = "2024-09-05"
