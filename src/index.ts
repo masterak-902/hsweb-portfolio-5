@@ -1,22 +1,50 @@
 import { Hono } from 'hono'
+import { logger } from 'hono/logger'
 
-const app = new Hono();
+type Bindings = {
+  DYNAMIC_CONTENT_STORE: KVNamespace
+  ORIGIN_HOST: string
+}
+
+interface CacheMetadata {
+  expiresAt: number;
+}
+
+interface CacheResult {
+  cache: string | null;
+  isExpired: boolean;
+}
+
+const createCache = async(kv: KVNamespace, pathname: string, ttl: number):Promise<void> => {
+  const res = await fetch(pathname);
+  const rss = await res.text();
+
+  const data = await parseRSStoJson(rss);
+  const expiresAt = Date.now() + ttl;
+
+  await kv.put(pathname, JSON.stringify(data), {
+    metadata: {
+      expiresAt,
+    },
+  });
+
+  console.log('Cache created:', pathname);
+}
+
+const app = new Hono<{ Bindings: Bindings }>()
+
+app.use('*', logger())
 
 app.get('/', async (c) => {
-  
-  const res = await fetch('https://zenn.dev/catnose99/feed');
-  const rss = await res.text();
-  try {
-    const json = await parseRSStoJson(rss);
-    return c.json(json);
-  } catch (e) {
-    console.log(e)
-    return c.text("Not Found");
-  };
+  const pathname:string = 'https://zenn.dev/catnose99/feed';
+  const ttl:number = 60
+  createCache(c.env.DYNAMIC_CONTENT_STORE, pathname, ttl);
+  return c.text("OK");
 })
 
 export default app;
 
+// RSS パーサー
 type RSSItem = {
   title: string;
   link: string;
