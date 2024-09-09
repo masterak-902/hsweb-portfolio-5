@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { logger } from 'hono/logger'
 
 type Bindings = {
-  DYNAMIC_CONTENT_STORE: KVNamespace
+  hsweb_kv_test: KVNamespace
   ORIGIN_HOST: string
 }
 
@@ -15,32 +15,53 @@ interface CacheResult {
   isExpired: boolean;
 }
 
-const createCache = async(kv: KVNamespace, pathname: string, ttl: number):Promise<void> => {
+const ttl:number = 3600 * 1000; // 1時間
+
+const createCache = async(kv: KVNamespace, pathname: string, ttl: number):Promise<string> => {
   const res = await fetch(pathname);
   const rss = await res.text();
 
   const data = await parseRSStoJson(rss);
   const expiresAt = Date.now() + ttl;
-
-  await kv.put(pathname, JSON.stringify(data), {
+  await kv.put(pathname, data, {
     metadata: {
       expiresAt,
     },
   });
 
-  console.log('Cache created:', pathname);
+  return data;
 }
+
+const getCache = async(kv: KVNamespace, pathname: string):Promise<CacheResult> => {
+  const { value, metadata } = await kv.getWithMetadata<CacheMetadata>(pathname, 'text');
+  console.log(metadata, Date.now() );
+  if (!value || !metadata) {
+    return {
+      cache: null,
+      isExpired: true,
+    };
+  }
+  return {
+    cache: value,
+    isExpired: metadata.expiresAt < Date.now(),
+  };
+};
 
 const app = new Hono<{ Bindings: Bindings }>()
 
 app.use('*', logger())
 
-app.get('/', async (c) => {
-  const pathname:string = 'https://zenn.dev/catnose99/feed';
-  const ttl:number = 60
-  createCache(c.env.DYNAMIC_CONTENT_STORE, pathname, ttl);
-  return c.text("OK");
-})
+app.get("/", async (c) => {
+  const pathname:string = 'https://zenn.dev/masterak/feed';
+  const { cache, isExpired } = await getCache(c.env.hsweb_kv_test, pathname);
+  if (isExpired) {
+    const res = await createCache(c.env.hsweb_kv_test, pathname, ttl);
+    return c.html(res);
+  }
+  if (cache) {
+    return c.html(cache);
+  }
+});
 
 export default app;
 
@@ -51,7 +72,7 @@ type RSSItem = {
   pubDate: string;
 }
 
-async function parseRSStoJson(text:string): Promise<RSSItem[]> {
+async function parseRSStoJson(text:string): Promise<string> {
   const items:RSSItem[] = [];
   // <items>の検索・正規表現
   const itemsRegex = /<item>([\s\S]*?)<\/item>/g; 
@@ -77,5 +98,5 @@ async function parseRSStoJson(text:string): Promise<RSSItem[]> {
       pubDate,
     });
   }
-  return items;
+  return JSON.stringify(items);
 };

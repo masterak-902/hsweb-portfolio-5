@@ -4,7 +4,7 @@
 ## キャッシュ周りの動作について
 
 `CloudFlare KV`を使用してISRを実現する。
-キャッシュの有効期間は、`3600[s]`にして、有効期限の管理はCronにて管理。
+キャッシュの有効期間は、`3600[s]`にして管理！
  
 # セットアップ
 ```sh
@@ -19,30 +19,20 @@ name = "hsweb-portfolio-5"
 compatibility_date = "2024-09-05"
 # compatibility_flags = [ "nodejs_compat" ]
 
-# [vars]
-# MY_VAR = "my-variable"
+[vars]
+MY_VAR = "my-variable"
 
-# [[kv_namespaces]]
-# binding = "MY_KV_NAMESPACE"
-# id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-
-# [[r2_buckets]]
-# binding = "MY_BUCKET"
-# bucket_name = "my-bucket"
-
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "my-database"
-# database_id = ""
-
-# [ai]
-# binding = "AI"
+[[kv_namespaces]]
+binding = "MY_KV_NAMESPACE"
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 
 
 ```sh
 bun install
 bun run dev
+
+npx wrangler kv create MY_KV_NAMESPACE
 ```
 
 # CloudFlareにアップロード 
