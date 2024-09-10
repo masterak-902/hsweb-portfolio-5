@@ -14,7 +14,7 @@ interface CacheResult {
   isExpired: boolean;
 }
 
-const ttl:number = 10000; // 1時間
+const ttl:number = 24 * 60 * 1000; // １日
 
 const createCache = async(kv: KVNamespace, pathname: string, ttl: number):Promise<string> => {
   const res = await fetch(pathname);
