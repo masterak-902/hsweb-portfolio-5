@@ -15,12 +15,11 @@ interface CacheResult {
   isExpired: boolean;
 }
 
-const ttl:number = 3600 * 1000; // 1時間
+const ttl:number = 10000; // 1時間
 
 const createCache = async(kv: KVNamespace, pathname: string, ttl: number):Promise<string> => {
   const res = await fetch(pathname);
   const rss = await res.text();
-
   const data = await parseRSStoJson(rss);
   const expiresAt = Date.now() + ttl;
   await kv.put(pathname, data, {
@@ -28,13 +27,13 @@ const createCache = async(kv: KVNamespace, pathname: string, ttl: number):Promis
       expiresAt,
     },
   });
-
+  console.log("Create Cache!" );
   return data;
 }
 
 const getCache = async(kv: KVNamespace, pathname: string):Promise<CacheResult> => {
-  const { value, metadata } = await kv.getWithMetadata<CacheMetadata>(pathname, 'text');
-  console.log(metadata, Date.now() );
+  const { value, metadata } = await kv.getWithMetadata<CacheMetadata>(pathname);
+  console.log("現在時刻：" + Date.now(), "キャッシュの有効期限：" + (metadata?.expiresAt ?? 'unknown'));
   if (!value || !metadata) {
     return {
       cache: null,
@@ -58,7 +57,7 @@ app.get("/", async (c) => {
     const res = await createCache(c.env.hsweb_kv_test, pathname, ttl);
     return c.html(res);
   }
-  if (cache) {
+  if (cache && !isExpired) {
     return c.html(cache);
   }
 });
