@@ -3,7 +3,6 @@ import { logger } from 'hono/logger'
 
 type Bindings = {
   hsweb_kv_test: KVNamespace
-  ORIGIN_HOST: string
 }
 
 interface CacheMetadata {
